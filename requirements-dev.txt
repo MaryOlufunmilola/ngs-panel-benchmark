@@ -1,0 +1,4 @@
+pandas
+matplotlib
+numpy
+pytest>=8.0

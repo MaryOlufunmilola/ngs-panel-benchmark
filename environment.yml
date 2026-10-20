@@ -1,0 +1,14 @@
+name: panelbench
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - matplotlib
+  - pytest
+  - samtools>=1.17
+  - bcftools>=1.17
+  - htslib>=1.17
+  - mosdepth
+  - bedtools
+# Optional, for haplotype-aware benchmarking: docker pull pkrusche/hap.py
