@@ -11,4 +11,4 @@ dependencies:
   - htslib>=1.17
   - mosdepth
   - bedtools
-# Optional, for haplotype-aware benchmarking: docker pull pkrusche/hap.py
+# Optional, for haplotype-aware benchmarking: see RUNNING.md step 2 (hap.py via Docker)

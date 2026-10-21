@@ -4,7 +4,7 @@ A walkthrough for running `ngs-panel-benchmark` on a Mac and publishing the resu
 
 | Part | Time |
 |---|---|
-| 1. Put the updated code on GitHub | 15 minutes |
+| 1. Put the code on GitHub | Done |
 | 2. Set up the environment | 15–30 minutes |
 | 3. Download the inputs | 20–40 minutes (about 4 GB) |
 | 4. Run the benchmark | 30–90 minutes (mostly streaming reads) |
@@ -15,53 +15,32 @@ You need about 10 GB of free disk space and a stable internet connection.
 
 ---
 
-## 1. Put the updated code on GitHub
+## 1. Put the code on GitHub (done Oct 20, 2026)
 
-Do this first, so the toy example and the BED fix are public before the full run.
-
-```bash
-cd ~/Projects
-git clone https://github.com/MaryOlufunmilola/ngs-panel-benchmark.git
-cd ngs-panel-benchmark
-
-# Copy the updated files over your clone (the zip's top folder is ngs-panel-benchmark/)
-unzip -o ~/Downloads/ngs-panel-benchmark.zip -d /tmp/npb_update
-rsync -av --exclude .git /tmp/npb_update/ngs-panel-benchmark/ ./
-
-git status          # review what changed
-git diff            # read the changes, especially src/panelbench.py (BED column order)
-```
-
-**What changed in this update:**
-
-- `src/panelbench.py`, `src/cli.py`: the panel BED now has columns in BED order
-  (chrom, start, end, gene). Before, interval merging put the gene name first, which breaks
-  mosdepth, bcftools and bedtools.
-- `example/`: tiny hand-made inputs with planted answers and a saved expected output.
-  `bash example/run_example.sh` runs the panel, coverage, comparison, and summary steps in seconds.
-- `tests/`: a test for the BED column order and an end-to-end toy-example test.
-- `requirements-dev.txt`: adds matplotlib, which the summary step needs (CI would fail without it).
-- `config/settings.sh`: points to a public GIAB HG002 BAM and sets the depth titration.
-- `run_benchmark.sh`: runs hap.py under amd64 emulation on Apple Silicon, and raises the
-  bcftools depth cap so deep samples aren't truncated.
-- `.gitignore`: lets the final results table and plots be committed.
-- `README.md`, `RUNNING.md`: inputs and outputs, toy example, runtime, and these instructions.
-
-Check the code, then push:
+The repo is at github.com/MaryOlufunmilola/ngs-panel-benchmark. For reference, this is how it was
+set up, and how to recheck the code at any time:
 
 ```bash
+cd ~/Projects/ngs-panel-benchmark
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 pytest                       # 6 tests should pass
 bash example/run_example.sh  # ends with "Output matches expected/titration_metrics.csv"
 deactivate
-
-git add -A
-git commit -m "Fix panel BED column order; add toy example, tests, and run instructions"
-git push
 ```
 
-Open the repo on GitHub, click **Actions**, and confirm the CI run is green.
+GitHub Actions runs the same tests on every push (`.github/workflows/ci.yml`); check the
+**Actions** tab for a green run after each push.
+
+**What's in the repo:**
+
+- `src/panelbench.py`, `src/cli.py`: panel, coverage, comparison, and summary steps. The panel BED
+  is written in BED column order (chrom, start, end, gene); a toy-example run caught an earlier
+  version that put the gene name first.
+- `example/`: tiny hand-made inputs with planted answers and a saved expected output.
+- `tests/`: unit tests plus an end-to-end toy-example test.
+- `config/settings.sh`: input paths, the public GIAB HG002 BAM, and the depth titration.
+- `run_benchmark.sh`: the full pipeline.
 
 ---
 
@@ -85,13 +64,20 @@ conda activate panelbench
 conda config --env --set subdir osx-64
 ```
 
-**hap.py (optional, recommended):** start Docker Desktop, then
+**hap.py (optional, recommended):** start Docker Desktop (`open -a Docker`), wait until it says
+"Engine running", then
 
 ```bash
-docker pull --platform linux/amd64 pkrusche/hap.py
+docker pull --platform linux/amd64 quay.io/biocontainers/hap.py:0.3.15--py27hcb73b3d_0
+docker run --rm --platform linux/amd64 quay.io/biocontainers/hap.py:0.3.15--py27hcb73b3d_0 hap.py --version
 ```
 
-Without it, the pipeline uses a simpler exact-match comparison automatically.
+The older `pkrusche/hap.py` image no longer pulls on current Docker ("manifest.v1 ... no longer
+supported"). If the tag above isn't found, open quay.io/repository/biocontainers/hap.py?tab=tags,
+copy the newest tag, and put it in `HAPPY_IMAGE` in `config/settings.sh`.
+
+Without hap.py, the pipeline uses a simpler exact-match comparison automatically
+("hap.py available: false" in the log); say so in the README's results section.
 
 ---
 
@@ -267,6 +253,6 @@ Use only numbers from `titration_metrics.csv`.
 | "Missing input" | A path in `config/settings.sh` doesn't match the file name; check with `ls data/*` |
 | Remote read access fails or hangs | Rerun `samtools view -H "$READS"`; try another network (some block https streaming) or another GIAB BAM |
 | `samtools view` very slow | Normal for 50 genes at ~300x over the internet; leave it running (`caffeinate` keeps the Mac awake) |
-| hap.py errors | Check Docker Desktop is running; or remove the image (`docker rmi pkrusche/hap.py`) and rerun, which uses the exact-match fallback |
+| hap.py errors | Check Docker Desktop is running; or remove the image (`docker rmi "$HAPPY_IMAGE"`) and rerun, which uses the exact-match fallback |
 | Very few variants found | Chromosome names differ between inputs (see the `SN:chr1` check in step 3) |
 | CI fails after pushing | Open the failed run under **Actions** and read the last error lines; usually a missing package in `requirements-dev.txt` |

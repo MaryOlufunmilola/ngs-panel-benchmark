@@ -14,7 +14,8 @@ for f in "$REF" "$REF.fai" "$GTF" "$TRUTH_VCF" "$TRUTH_BED"; do
   [ -e "$f" ] || { echo "Missing input: $f (see README, Data)"; exit 1; }
 done
 USE_HAPPY=false
-if command -v docker >/dev/null && docker image inspect pkrusche/hap.py >/dev/null 2>&1; then USE_HAPPY=true; fi
+HAPPY_IMAGE="${HAPPY_IMAGE:-quay.io/biocontainers/hap.py:0.3.15--py27hcb73b3d_0}"; HAPPY_CMD="${HAPPY_CMD:-hap.py}"
+if command -v docker >/dev/null && docker image inspect "$HAPPY_IMAGE" >/dev/null 2>&1; then USE_HAPPY=true; fi
 echo "hap.py available: $USE_HAPPY (otherwise exact-match comparison is used)"
 
 echo "==> 1. Panel BED from GTF"
@@ -51,7 +52,7 @@ for FRAC in $FRACTIONS; do
   bcftools index -f -t "$D/calls.vcf.gz"
 
   if $USE_HAPPY; then
-    docker run --rm --platform linux/amd64 -v "$PWD":/w -w /w pkrusche/hap.py /opt/hap.py/bin/hap.py \
+    docker run --rm --platform linux/amd64 -v "$PWD":/w -w /w "$HAPPY_IMAGE" "$HAPPY_CMD" \
       data/truth_panel.vcf.gz "$D/calls.vcf.gz" -f data/eval.bed -r "$REF" -o "$D/happy" > "$D/happy.log" 2>&1
   else
     python src/cli.py compare --truth data/truth_panel.vcf.gz --query "$D/calls.vcf.gz" \

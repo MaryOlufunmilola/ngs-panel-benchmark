@@ -77,7 +77,7 @@ Step-by-step instructions, including downloads and troubleshooting: [`RUNNING.md
 
 ```bash
 conda env create -f environment.yml && conda activate panelbench
-docker pull --platform linux/amd64 pkrusche/hap.py   # optional, recommended
+docker pull --platform linux/amd64 quay.io/biocontainers/hap.py:0.3.15--py27hcb73b3d_0   # optional, recommended
 # download inputs (RUNNING.md, step 3); check config/settings.sh
 bash run_benchmark.sh
 ```

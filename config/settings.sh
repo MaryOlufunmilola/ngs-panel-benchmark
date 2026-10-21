@@ -8,4 +8,7 @@ TRUTH_BED="data/truth/HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed"
 CLINVAR_VCF=""                                             # optional: data/annotation/clinvar.vcf.gz (GRCh38)
 FRACTIONS="1.0 0.2 0.1 0.05 0.02"                         # depth titration (fraction of reads kept); from ~300x: ~300x, 60x, 30x, 15x, 6x
 SEED=42
+# Optional hap.py container (Docker). pkrusche/hap.py no longer pulls on current Docker; use the Bioconda build.
+HAPPY_IMAGE="quay.io/biocontainers/hap.py:0.3.15--py27hcb73b3d_0"
+HAPPY_CMD="hap.py"                                         # path to hap.py inside the image
 THREADS=4
