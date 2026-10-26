@@ -7,7 +7,7 @@ quickly does performance degrade as sequencing depth drops? This project answers
 **GIAB HG002**, a reference sample whose variants are known with high confidence, restricted to the
 coding exons of 50 commonly profiled cancer genes.
 
-> **Status:** code and tests complete; results will be added after the full run.
+> **Status:** complete. Results below are from a full run on GIAB HG002 (GENCODE v50, hap.py 0.3.15), October 22, 2026.
 
 ## What it measures
 
@@ -26,12 +26,54 @@ coding exons of 50 commonly profiled cancer genes.
 4. **For each depth fraction:** coverage (mosdepth), variant calling (bcftools mpileup/call, normalized), and comparison with the truth set (hap.py, or an exact-match fallback).
 5. **Summary:** `results/titration_metrics.csv`, `results/sensitivity_vs_depth.png`, `results/coverage_by_gene.png`.
 
+## Results
+
+**Panel:** 50 genes, 1,066 intervals, 214,419 bp. Of these, 210,782 bp fall in GIAB high-confidence
+regions and are scored; they contain **97 truth SNVs and 3 truth indels**. Reads: GIAB HG002
+Illumina, ~291x mean depth over the panel at full depth, with 99.998% of bases at or above 0.2x the
+mean.
+
+| Mean depth | Reads kept | SNV recall | SNV precision | SNV F1 | SNV missed / false | Indels found |
+|---|---|---|---|---|---|---|
+| ~291x | 100% | 1.000 | 1.000 | 1.000 | 0 / 0 | 3 of 3 |
+| ~58x | 20% | 1.000 | 0.990 | 0.995 | 0 / 1 | 3 of 3 |
+| ~29x | 10% | 0.990 | 0.950 | 0.970 | 1 / 5 | 3 of 3 |
+| ~15x | 5% | 0.979 | 0.941 | 0.960 | 2 / 6 | 3 of 3 |
+| ~6x | 2% | 0.722 | 0.921 | 0.809 | 27 / 6 | 3 of 3 |
+
+Full table: [`results/titration_metrics.csv`](results/titration_metrics.csv).
+
+![Sensitivity vs depth](results/sensitivity_vs_depth.png)
+
+![Coverage by gene](results/coverage_by_gene.png)
+
+### Takeaways
+
+SNV recall stays at 0.98 or higher down to about 15x and then drops off quickly: at about 6x,
+27 of the 97 truth SNVs are missed. Precision also slips as depth falls, from no false positives
+at full depth to five or six at 29x and below.
+
+Every gene averaged roughly 200x or more at full depth, from about 400x (KRAS) down to about
+200x (CDKN2A). The lowest were CDKN2A, TP53, RET, and KMT2D. CDKN2A is GC-rich, which usually
+lowers Illumina coverage; TP53 being near the bottom is worth noting given how often it is
+mutated in cancer.
+
+All 3 indels were found at every depth, but three is far too few to say anything about indel
+sensitivity.
+
+### Something I ran into
+
+In my first full run, all 3 indels disappeared at full depth even though every downsampled run
+found them. The cause was a bcftools default: `mpileup` skips indel calling when the average
+depth is above 250x (`-L/--max-idepth`). This sample is ~291x, so indels were never called.
+`run_benchmark.sh` now sets `-L 1000`. Worth checking in any high-depth panel pipeline.
+
 ## Inputs and outputs
 
 | | File | Format |
 |---|---|---|
 | **Input** | Reference genome | GRCh38 FASTA + `.fai` index |
-| | Gene annotation | GENCODE basic GTF (`.gtf.gz`); panel genes listed one per line in `config/genes.txt` |
+| | Gene annotation | GENCODE basic GTF (`.gtf` or `.gtf.gz`); panel genes listed one per line in `config/genes.txt` |
 | | Reads | HG002 BAM/CRAM aligned to GRCh38, with index (local path or https URL) |
 | | Truth set | GIAB v4.2.1 VCF (`.vcf.gz` + `.tbi`) and high-confidence BED |
 | **Output** | `data/panel.bed` | Panel intervals: chrom, start (0-based), end, gene |
@@ -42,7 +84,7 @@ coding exons of 50 commonly profiled cancer genes.
 
 Download links and file names: [`data/README.md`](data/README.md).
 
-## Try it in seconds (no downloads)
+## Quick check with toy data (no downloads)
 
 `example/` has tiny hand-made inputs (a 3-gene GTF, coverage files, and truth and call VCFs at four
 depths, with a planted 20 bp coverage dropout and known missed and false calls). One command runs
@@ -67,9 +109,9 @@ are covered by the full run. It also runs as part of `pytest`.
 | Run | Time | Disk |
 |---|---|---|
 | Toy example | a few seconds | under 1 MB |
-| Full benchmark | 30-90 minutes, mostly streaming panel reads over the internet | about 10 GB (reference, truth set, panel reads) |
+| Full benchmark | Mostly the time to stream panel reads from GIAB, so it depends on your connection; reruns reuse the cached reads and finish in minutes | 6.1 GB of inputs in `data/` (reference, annotation, truth set, panel reads); 37 MB of results |
 
-Laptop-scale: only panel regions are processed. Full-run figures are estimates; update them after your first run.
+Runs on a laptop (I used a MacBook Pro): only the panel regions are processed.
 
 ## Run
 
