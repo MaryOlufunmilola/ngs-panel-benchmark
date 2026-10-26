@@ -1,13 +1,13 @@
-# Running the NGS Panel Benchmark: Step-by-Step
+# Running the NGS Panel Benchmark: Step by Step
 
 A walkthrough for running `ngs-panel-benchmark` on a Mac and publishing the results on GitHub.
 
 | Part | Time |
 |---|---|
 | 1. Put the code on GitHub | Done |
-| 2. Set up the environment | 15–30 minutes |
-| 3. Download the inputs | 20–40 minutes (about 4 GB) |
-| 4. Run the benchmark | 30–90 minutes (mostly streaming reads) |
+| 2. Set up the environment | 15 to 30 minutes |
+| 3. Download the inputs | 20 to 40 minutes (about 4 GB) |
+| 4. Run the benchmark | 30 to 90 minutes (mostly streaming reads) |
 | 5. Check the results | 10 minutes |
 | 6. Publish the results | 15 minutes |
 
@@ -35,10 +35,10 @@ GitHub Actions runs the same tests on every push (`.github/workflows/ci.yml`); c
 **What's in the repo:**
 
 - `src/panelbench.py`, `src/cli.py`: panel, coverage, comparison, and summary steps. The panel BED
-  is written in BED column order (chrom, start, end, gene); a toy-example run caught an earlier
+  is written in BED column order (chrom, start, end, gene); a toy example run caught an earlier
   version that put the gene name first.
-- `example/`: tiny hand-made inputs with planted answers and a saved expected output.
-- `tests/`: unit tests plus an end-to-end toy-example test.
+- `example/`: tiny handmade inputs with planted answers and a saved expected output.
+- `tests/`: unit tests plus an end to end test on the toy example.
 - `config/settings.sh`: input paths, the public GIAB HG002 BAM, and the depth titration.
 - `run_benchmark.sh`: the full pipeline.
 
@@ -76,7 +76,7 @@ The older `pkrusche/hap.py` image no longer pulls on current Docker ("manifest.v
 supported"). If the tag above isn't found, open quay.io/repository/biocontainers/hap.py?tab=tags,
 copy the newest tag, and put it in `HAPPY_IMAGE` in `config/settings.sh`.
 
-Without hap.py, the pipeline uses a simpler exact-match comparison automatically
+Without hap.py, the pipeline uses a simpler exact match comparison automatically
 ("hap.py available: false" in the log); say so in the README's results section.
 
 ---
@@ -142,7 +142,7 @@ samtools view -H "$READS" | grep "^@SQ" | head -3
 You should see `SN:chr1`. If you get an error, or `SN:1` without "chr", choose another HG002
 Illumina GRCh38 BAM that has a `.bai` index, from GIAB's index files
 (github.com/genome-in-a-bottle/giab_data_indexes, folder `AshkenazimTrio`), and put its https URL in
-`READS`. If you change to a ~30–60x file, also change `FRACTIONS` to `"1.0 0.5 0.25 0.1"`.
+`READS`. If you change to a ~30 to 60x file, also change `FRACTIONS` to `"1.0 0.5 0.25 0.1"`.
 
 ---
 
@@ -188,16 +188,16 @@ If it stops partway, fix the problem and rerun the same command. Fetched reads a
 | `results/sensitivity_vs_depth.png` | How detection changes as depth falls |
 | `results/coverage_by_gene.png` | Mean depth per gene at full depth |
 | `results/frac_1.0/coverage_summary.json` | Mean depth, % bases at 20x/50x/100x, uniformity |
-| `results/clinvar_matches.tsv` | Full-depth calls with a ClinVar record (optional) |
+| `results/clinvar_matches.tsv` | Calls at full depth with a ClinVar record (optional) |
 
 **Sanity checks:**
 
-- **Full-depth SNV recall and precision should be high** (typically above 0.95). Very low values
+- **SNV recall at full depth and precision should be high** (typically above 0.95). Very low values
   usually mean mismatched builds or chromosome names between reads, reference and truth set.
 - **Indels usually score lower than SNVs.** That's normal; say so in the README.
 - **Recall should fall at the lowest depths** (15x and 6x). If nothing changes, check that
   `mean_depth` differs between fractions in `titration_metrics.csv`.
-- **Some genes will have low coverage** in `coverage_by_gene.png` (often GC-rich first exons).
+- **Some genes will have low coverage** in `coverage_by_gene.png` (often first exons high in GC content).
   Name the lowest two or three in the README.
 
 ---
@@ -225,8 +225,8 @@ EOF
   - the table you just printed;
   - `![Sensitivity vs depth](results/sensitivity_vs_depth.png)` and
     `![Coverage by gene](results/coverage_by_gene.png)`;
-  - two or three sentences of interpretation: full-depth SNV and indel recall and precision,
-    the depth at which SNV recall drops below 0.95, and the lowest-coverage genes.
+  - two or three sentences of interpretation: SNV and indel recall at full depth and precision,
+    the depth at which SNV recall drops below 0.95, and the genes with the lowest coverage.
 - In "Time and resources", replace the estimates with your actual run time and disk use.
 
 **3. Commit and push** (`.gitignore` already allows these three result files):
@@ -253,6 +253,6 @@ Use only numbers from `titration_metrics.csv`.
 | "Missing input" | A path in `config/settings.sh` doesn't match the file name; check with `ls data/*` |
 | Remote read access fails or hangs | Rerun `samtools view -H "$READS"`; try another network (some block https streaming) or another GIAB BAM |
 | `samtools view` very slow | Normal for 50 genes at ~300x over the internet; leave it running (`caffeinate` keeps the Mac awake) |
-| hap.py errors | Check Docker Desktop is running; or remove the image (`docker rmi "$HAPPY_IMAGE"`) and rerun, which uses the exact-match fallback |
+| hap.py errors | Check Docker Desktop is running; or remove the image (`docker rmi "$HAPPY_IMAGE"`) and rerun, which uses the exact match fallback |
 | Very few variants found | Chromosome names differ between inputs (see the `SN:chr1` check in step 3) |
 | CI fails after pushing | Open the failed run under **Actions** and read the last error lines; usually a missing package in `requirements-dev.txt` |

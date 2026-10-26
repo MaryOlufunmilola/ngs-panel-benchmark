@@ -1,5 +1,5 @@
 """
-Helpers for a targeted-panel variant-calling benchmark on a GIAB reference sample:
+Helpers for a variant calling benchmark on a targeted panel on a GIAB reference sample:
 build a panel BED from a GTF, summarize coverage and uniformity, compare calls to a truth set,
 and collect metrics across a depth titration. Pure Python (pandas, numpy) so they can be unit tested.
 """
@@ -53,7 +53,7 @@ def gtf_to_panel_bed(gtf_path, genes, feature="CDS", pad=10):
             m = re.search(r'gene_name "([^"]+)"', parts[8])
             if not m or m.group(1) not in wanted:
                 continue
-            start = max(0, int(parts[3]) - 1 - pad)   # GTF is 1-based inclusive; BED is 0-based half-open
+            start = max(0, int(parts[3]) - 1 - pad)   # GTF is 1-based inclusive; BED is 0-based, end exclusive
             rows.append((parts[0], start, int(parts[4]) + pad, m.group(1)))
     df = pd.DataFrame(rows, columns=["chrom", "start", "end", "gene"])
     bed = merge_intervals(df) if len(df) else df
@@ -65,8 +65,8 @@ def gtf_to_panel_bed(gtf_path, genes, feature="CDS", pad=10):
 # ---------------------------------------------------------------- coverage
 def per_base_depth_in_panel(perbase, panel):
     """
-    Length-weighted depth values restricted to panel intervals.
-    perbase: DataFrame chrom,start,end,depth (mosdepth per-base runs); panel: chrom,start,end[,gene].
+    Depth values weighted by length restricted to panel intervals.
+    perbase: DataFrame chrom,start,end,depth (mosdepth per base runs); panel: chrom,start,end[,gene].
     Returns DataFrame of (gene, length, depth) pieces covering the panel.
     """
     pieces = []
@@ -80,7 +80,7 @@ def per_base_depth_in_panel(perbase, panel):
                 if rs[k] >= iv["end"]:
                     break
                 s, e = max(rs[k], iv["start"]), min(re_[k], iv["end"])
-                if s > covered:          # gap in the per-base output = zero depth
+                if s > covered:          # gap in the per base output = zero depth
                     pieces.append((iv.get("gene", chrom), s - covered, 0))
                 if e > s:
                     pieces.append((iv.get("gene", chrom), e - s, rd[k]))

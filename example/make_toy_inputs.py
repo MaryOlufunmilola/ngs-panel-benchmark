@@ -1,14 +1,14 @@
 """
-Write tiny, hand-checkable inputs for the Python steps of the benchmark
+Write tiny inputs, small enough to check by hand, for the Python steps of the benchmark
 (make-panel, coverage, compare, collect), standing in for the outputs of
 mosdepth and bcftools at four read depths.
 
 Planted design:
   - GTF: 3 panel genes (GENE_A, GENE_B, GENE_C) with CDS exons, plus a UTR row
-    and an off-panel gene that must be ignored. GENE_MISSING is listed in
+    and a gene outside the panel that must be ignored. GENE_MISSING is listed in
     genes.txt but absent from the GTF, so make-panel should report it.
   - Depth at full coverage: GENE_A 200x, GENE_B 100x, GENE_C 40x, with a 20 bp
-    zero-coverage gap in GENE_B. Lower fractions scale depth down.
+    gap with zero coverage in GENE_B. Lower fractions scale depth down.
   - Truth: 10 SNVs + 4 indels in the panel, 1 SNV outside it (must not count).
   - Calls: all found at full depth; progressively more missed, and a few
     false positives added, as depth drops.
@@ -57,7 +57,7 @@ def write_gtf(path):
 
 
 def write_perbase(path, frac):
-    """mosdepth-style per-base runs (0-based half-open), covering the padded panel."""
+    """Per base depth runs in mosdepth format (0-based, end exclusive), covering the padded panel."""
     runs = []
     for chrom, gene, exons in GENES:
         depth = round(FULL_DEPTH[gene] * float(frac))

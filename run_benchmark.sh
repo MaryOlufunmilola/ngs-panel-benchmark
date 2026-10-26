@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Targeted-panel variant-calling benchmark on GIAB HG002.
-# Builds a 50-gene panel, extracts reads over it, measures coverage and uniformity, calls variants,
+# Variant calling benchmark for a targeted panel on GIAB HG002.
+# Builds a panel of 50 genes, extracts reads over it, measures coverage and uniformity, calls variants,
 # compares them with the GIAB truth set, and repeats at lower depths. Run from the repository root.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -16,7 +16,7 @@ done
 USE_HAPPY=false
 HAPPY_IMAGE="${HAPPY_IMAGE:-quay.io/biocontainers/hap.py:0.3.15--py27hcb73b3d_0}"; HAPPY_CMD="${HAPPY_CMD:-hap.py}"
 if command -v docker >/dev/null && docker image inspect "$HAPPY_IMAGE" >/dev/null 2>&1; then USE_HAPPY=true; fi
-echo "hap.py available: $USE_HAPPY (otherwise exact-match comparison is used)"
+echo "hap.py available: $USE_HAPPY (otherwise exact match comparison is used)"
 
 echo "==> 1. Panel BED from GTF"
 python src/cli.py make-panel --gtf "$GTF" --out data/panel.bed | tee logs/panel.log
@@ -27,7 +27,7 @@ if [ ! -s data/hg002_panel.bam ]; then
   samtools index data/hg002_panel.bam
 fi
 
-echo "==> 3. Evaluation regions (panel within GIAB high-confidence regions) and truth subset"
+echo "==> 3. Evaluation regions (panel within GIAB high confidence regions) and truth subset"
 bedtools intersect -a data/panel.bed -b "$TRUTH_BED" | cut -f1-3 | sort -k1,1 -k2,2n | bedtools merge > data/eval.bed
 bcftools view -R data/eval.bed "$TRUTH_VCF" -Ou | bcftools norm -f "$REF" -m -any -Oz -o data/truth_panel.vcf.gz
 bcftools index -f -t data/truth_panel.vcf.gz
@@ -47,7 +47,7 @@ for FRAC in $FRACTIONS; do
   mosdepth -t "$THREADS" --by data/panel.bed "$D/cov" "$BAM"
   python src/cli.py coverage --perbase "$D/cov.per-base.bed.gz" --out-prefix "$D/coverage" > "$D/coverage.log"
 
-  bcftools mpileup -f "$REF" -R data/panel.bed -a AD,DP -q 20 -Q 20 -d 1000 -Ou "$BAM" \
+  bcftools mpileup -f "$REF" -R data/panel.bed -a AD,DP -q 20 -Q 20 -d 1000 -L 1000 -Ou "$BAM" \
     | bcftools call -mv -Ou | bcftools norm -f "$REF" -m -any -Oz -o "$D/calls.vcf.gz"
   bcftools index -f -t "$D/calls.vcf.gz"
 
@@ -64,7 +64,7 @@ echo "==> 5. Titration summary and plots"
 python src/cli.py collect --results results --fractions $FRACTIONS | tee logs/titration.log
 
 if [ -n "$CLINVAR_VCF" ] && [ -e "$CLINVAR_VCF" ]; then
-  echo "==> 6. ClinVar annotation of full-depth calls"
+  echo "==> 6. ClinVar annotation of calls at full depth"
   # ClinVar names chromosomes 1, 2, ...; the GRCh38 analysis set uses chr1, chr2, ...
   bcftools view -h "$CLINVAR_VCF" | grep -q '^##contig=<ID=chr' && CV="$CLINVAR_VCF" || {
     for c in $(seq 1 22) X Y; do echo "$c chr$c"; done > data/chr_map.txt

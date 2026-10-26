@@ -1,4 +1,4 @@
-"""Command-line steps for the panel benchmark (called from run_benchmark.sh)."""
+"""Command line steps for the panel benchmark (called from run_benchmark.sh)."""
 
 import argparse
 import json
@@ -59,7 +59,7 @@ def collect(a):
         ax.plot(g["mean_depth"], g["recall"], marker="o", label=f"{t} recall")
         ax.plot(g["mean_depth"], g["precision"], marker="s", linestyle="--", label=f"{t} precision")
     ax.set_xlabel("Mean depth over panel"); ax.set_ylabel("Value"); ax.set_ylim(0, 1.02)
-    ax.set_title("Variant-calling performance vs. depth"); ax.legend(fontsize=8)
+    ax.set_title("Variant calling performance vs. depth"); ax.legend(fontsize=8)
     fig.tight_layout(); fig.savefig(os.path.join(a.results, "sensitivity_vs_depth.png"), dpi=200)
 
     full = os.path.join(a.results, "frac_1.0", "coverage_per_gene.csv")

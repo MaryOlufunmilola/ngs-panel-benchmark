@@ -80,7 +80,7 @@ def test_parse_happy_summary_keeps_pass_rows(tmp_path):
 
 
 def test_toy_example_matches_expected_output():
-    """End-to-end run of the Python steps on the example inputs (see example/README in the main README)."""
+    """End to end run of the Python steps on the example inputs (see example/README in the main README)."""
     import pathlib
     import subprocess
     root = pathlib.Path(__file__).resolve().parents[1]
